@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Meeting Notes Generator AI | IncomeAIHub</title>
+<meta name="description" content="Turn messy meeting notes or transcripts into clean, structured meeting minutes with action items in seconds. Built for freelancers, CA firms & MSMEs.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- AdSense placeholder: replace ca-pub-XXXXXXXXXXXXXXXX with real publisher id before going live -->
+<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<style>
+:root{
+  --bg:#0a0a0d;
+  --bg-2:#111116;
+  --panel:#15151b;
+  --panel-2:#1b1b22;
+  --border:#26262f;
+  --border-soft:#1e1e26;
+  --text:#f2f1ec;
+  --text-dim:#a6a4b3;
+  --text-faint:#6d6c7c;
+  --gold:#d4af6a;
+  --gold-soft:#e8cf9a;
+  --emerald:#3fb887;
+  --violet:#8b7fd9;
+  --danger:#e06666;
+  --radius:14px;
+  --radius-sm:9px;
+  --shadow-lg:0 24px 60px -20px rgba(0,0,0,.6);
+  --font-display:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:
+    radial-gradient(ellipse 900px 500px at 12% -8%, rgba(212,175,106,.10), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 100% 10%, rgba(139,127,217,.09), transparent 55%),
+    radial-gradient(ellipse 700px 500px at 50% 100%, rgba(63,184,135,.06), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  line-height:1.55;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(212,175,106,.3);}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:#2a2a34;border-radius:8px;}
+::-webkit-scrollbar-thumb:hover{background:#383844;}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+
+/* ---------- NAV ---------- */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,10,13,.82);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border-soft);
+}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1180px;margin:0 auto;}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:.2px;}
+.brand-mark{
+  width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,var(--gold),#a9803f);
+  display:flex;align-items:center;justify-content:center;
+  color:#100d05;font-weight:800;font-size:14px;font-family:var(--font-display);
+  flex-shrink:0;
+}
+.brand small{display:block;font-family:var(--font-mono);font-size:10px;color:var(--text-faint);font-weight:400;letter-spacing:.5px;text-transform:uppercase;}
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.pill-status{
+  font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:99px;
+  border:1px solid var(--border);color:var(--text-dim);display:flex;align-items:center;gap:6px;
+}
+.pill-status .dot{width:6px;height:6px;border-radius:50%;background:var(--text-faint);}
+.pill-status.free .dot{background:var(--gold);}
+.pill-status.unlocked{border-color:rgba(63,184,135,.4);color:var(--emerald);}
+.pill-status.unlocked .dot{background:var(--emerald);}
+.btn{
+  font-family:var(--font-body);font-weight:600;font-size:13.5px;
+  padding:10px 18px;border-radius:10px;border:1px solid var(--border);
+  background:var(--panel-2);color:var(--text);transition:.15s ease;
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+}
+.btn:hover{border-color:#3a3a46;transform:translateY(-1px);}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold),#b98f4d);
+  color:#161207;border:none;font-weight:700;
+}
+.btn-gold:hover{filter:brightness(1.08);}
+.btn-ghost{background:transparent;}
+.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
+
+/* ---------- HERO ---------- */
+.hero{padding:64px 0 40px;}
+.hero-eyebrow{
+  font-family:var(--font-mono);font-size:12px;color:var(--gold-soft);
+  text-transform:uppercase;letter-spacing:1.6px;display:flex;align-items:center;gap:10px;margin-bottom:18px;
+}
+.hero-eyebrow::before{content:'';width:26px;height:1px;background:var(--gold);}
+h1{
+  font-family:var(--font-display);font-weight:800;
+  font-size:clamp(30px,4.6vw,50px);line-height:1.08;letter-spacing:-.5px;
+  max-width:760px;
+}
+h1 em{font-style:normal;color:var(--gold-soft);}
+.hero-sub{color:var(--text-dim);font-size:16px;max-width:600px;margin-top:16px;}
+.hero-stats{display:flex;gap:28px;margin-top:28px;flex-wrap:wrap;}
+.hstat b{display:block;font-family:var(--font-display);font-size:22px;color:var(--gold-soft);}
+.hstat span{font-size:12px;color:var(--text-faint);font-family:var(--font-mono);}
+
+/* ---------- LAYOUT ---------- */
+.layout{display:grid;grid-template-columns:1.05fr 1fr;gap:22px;padding:20px 0 60px;align-items:start;}
+@media(max-width:940px){.layout{grid-template-columns:1fr;}}
+
+.card{
+  background:linear-gradient(180deg,var(--panel),var(--panel));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+  box-shadow:var(--shadow-lg);
+}
+.card + .card{margin-top:18px;}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap;}
+.card-title{font-family:var(--font-display);font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;}
+.card-title .num{
+  width:22px;height:22px;border-radius:6px;background:var(--panel-2);border:1px solid var(--border);
+  font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;justify-content:center;color:var(--gold-soft);
+}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--text-dim);margin-bottom:7px;margin-top:16px;letter-spacing:.2px;}
+label:first-of-type{margin-top:0;}
+textarea,input[type=text],select{
+  width:100%;background:var(--bg-2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 13px;color:var(--text);font-family:var(--font-body);font-size:14px;
+  transition:.15s;resize:vertical;
+}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,106,.12);}
+textarea{min-height:180px;line-height:1.6;font-family:var(--font-mono);font-size:13px;}
+select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a6a4b3' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+.hint{font-size:11.5px;color:var(--text-faint);margin-top:6px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:520px){.row2{grid-template-columns:1fr;}}
+
+.chip-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.chip{
+  padding:8px 13px;border-radius:99px;border:1px solid var(--border);background:var(--bg-2);
+  font-size:12.5px;color:var(--text-dim);transition:.15s;font-weight:500;
+}
+.chip:hover{border-color:#3a3a46;color:var(--text);}
+.chip.active{background:rgba(212,175,106,.13);border-color:var(--gold);color:var(--gold-soft);}
+.chip.locked::after{content:'🔒';margin-left:5px;font-size:10px;}
+
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
+@media(max-width:520px){.preset-grid{grid-template-columns:1fr;}}
+.preset{
+  text-align:left;padding:12px 13px;border-radius:10px;border:1px solid var(--border);background:var(--bg-2);
+  transition:.15s;
+}
+.preset:hover{border-color:var(--violet);transform:translateY(-1px);}
+.preset b{display:block;font-size:12.5px;color:var(--text);margin-bottom:2px;}
+.preset span{font-size:11px;color:var(--text-faint);}
+.preset.locked{opacity:.55;}
+.preset.locked b::after{content:' · Pro';color:var(--gold-soft);font-size:10px;}
+
+.gen-btn{
+  width:100%;margin-top:20px;padding:15px;border-radius:11px;border:none;
+  background:linear-gradient(135deg,var(--gold),#b98f4d);color:#161207;
+  font-family:var(--font-display);font-weight:700;font-size:15px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:.15s;
+}
+.gen-btn:hover{filter:brightness(1.07);transform:translateY(-1px);}
+.gen-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none;}
+.spinner{width:15px;height:15px;border-radius:50%;border:2px solid rgba(0,0,0,.25);border-top-color:#161207;animation:spin .7s linear infinite;display:none;}
+.spinner.show{display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.usage-note{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:11.5px;color:var(--text-faint);font-family:var(--font-mono);}
+.usage-note b{color:var(--gold-soft);}
+
+/* ---------- OUTPUT ---------- */
+.output-card{min-height:420px;display:flex;flex-direction:column;}
+.output-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;color:var(--text-faint);padding:40px 20px;gap:10px;
+}
+.output-empty .ic{font-size:30px;opacity:.5;}
+.output-empty p{font-size:13px;max-width:280px;}
+
+.output-body{display:none;}
+.output-body.show{display:block;}
+.notes-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.tag{font-family:var(--font-mono);font-size:10.5px;padding:5px 10px;border-radius:6px;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);}
+.tag.emerald{color:var(--emerald);border-color:rgba(63,184,135,.35);}
+.tag.violet{color:var(--violet);border-color:rgba(139,127,217,.35);}
+
+.notes-section{margin-bottom:20px;}
+.notes-section h3{
+  font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--gold-soft);
+  display:flex;align-items:center;gap:8px;margin-bottom:9px;
+  padding-bottom:8px;border-bottom:1px solid var(--border-soft);
+}
+.notes-section ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.notes-section ul li{
+  font-size:13.5px;color:var(--text);padding-left:16px;position:relative;line-height:1.55;
+}
+.notes-section ul li::before{content:'—';position:absolute;left:0;color:var(--text-faint);}
+.notes-section p{font-size:13.5px;color:var(--text);line-height:1.65;}
+
+.action-item{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  padding:10px 12px;border-radius:9px;background:var(--bg-2);border:1px solid var(--border-soft);margin-bottom:8px;
+}
+.action-item .t{font-size:13px;flex:1;}
+.action-item .meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.action-item .owner{font-family:var(--font-mono);font-size:10.5px;color:var(--violet);}
+.action-item .due{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);}
+
+.output-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);}
+
+/* ---------- HISTORY ---------- */
+.history-item{
+  padding:11px 12px;border-radius:9px;border:1px solid var(--border-soft);background:var(--bg-2);
+  margin-bottom:8px;cursor:pointer;transition:.15s;
+}
+.history-item:hover{border-color:var(--gold);}
+.history-item b{display:block;font-size:12.5px;margin-bottom:2px;}
+.history-item span{font-size:10.5px;color:var(--text-faint);font-family:var(--font-mono);}
+.history-empty{font-size:12.5px;color:var(--text-faint);text-align:center;padding:20px 0;}
+
+/* ---------- AD SLOTS ---------- */
+.ad-slot{
+  border:1px dashed var(--border);border-radius:10px;padding:14px;text-align:center;
+  font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin:18px 0;
+  background:var(--bg-2);
+}
+
+/* ---------- PAYWALL / MODALS ---------- */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(6,6,8,.75);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal{
+  background:var(--panel);border:1px solid var(--border);border-radius:16px;
+  max-width:460px;width:100%;padding:28px;box-shadow:var(--shadow-lg);
+  max-height:88vh;overflow-y:auto;position:relative;
+}
+.modal.wide{max-width:640px;}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-faint);font-size:20px;padding:4px;}
+.modal-close:hover{color:var(--text);}
+.modal-icon{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--gold),#a9803f);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px;}
+.modal h2{font-family:var(--font-display);font-size:21px;margin-bottom:8px;}
+.modal p.desc{color:var(--text-dim);font-size:13.5px;margin-bottom:18px;}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.feature-list li{display:flex;align-items:center;gap:10px;font-size:13.5px;}
+.feature-list .check{color:var(--emerald);flex-shrink:0;}
+.price-box{
+  background:var(--bg-2);border:1px solid var(--border);border-radius:12px;padding:16px;
+  display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;
+}
+.price-box .amt{font-family:var(--font-display);font-size:28px;font-weight:800;color:var(--gold-soft);}
+.price-box .amt small{font-size:13px;color:var(--text-faint);font-family:var(--font-body);font-weight:500;}
+.price-box .old{text-decoration:line-through;color:var(--text-faint);font-size:13px;}
+.trust-row{display:flex;gap:14px;justify-content:center;margin-top:14px;font-size:10.5px;color:var(--text-faint);font-family:var(--font-mono);flex-wrap:wrap;}
+
+/* Hindi guide */
+.guide-body h3{font-family:var(--font-display);color:var(--gold-soft);font-size:15px;margin:18px 0 8px;}
+.guide-body h3:first-child{margin-top:0;}
+.guide-body p,.guide-body li{font-size:13.5px;color:var(--text-dim);line-height:1.7;}
+.guide-body ul{padding-left:18px;margin-top:6px;}
+.guide-step{display:flex;gap:12px;margin-bottom:14px;}
+.guide-step .n{
+  width:24px;height:24px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--gold-soft);flex-shrink:0;
+}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;
+  font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-lg);
+  z-index:1200;opacity:0;pointer-events:none;transition:.25s ease;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast .ic{color:var(--emerald);}
+
+footer{border-top:1px solid var(--border-soft);padding:30px 0 60px;text-align:center;}
+footer p{font-size:11.5px;color:var(--text-faint);font-family:var(--font-mono);}
+footer a{color:var(--text-dim);text-decoration:underline;text-underline-offset:3px;}
+
+.demo-banner{
+  background:rgba(139,127,217,.08);border:1px solid rgba(139,127,217,.3);border-radius:10px;
+  padding:10px 14px;font-size:12px;color:var(--violet);margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+
+@media(max-width:640px){
+  .wrap{padding:0 16px;}
+  .card{padding:17px;}
+  .nav-inner{padding:14px 16px;}
+  .hero{padding:40px 0 24px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="brand-mark">MN</div>
+      <div>
+        Meeting Notes AI
+        <small>IncomeAIHub · M.Dev</small>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <span class="pill-status free" id="statusPill"><span class="dot"></span>Free · <span id="usesLeft">3</span> left today</span>
+      <button class="btn btn-ghost btn-sm" id="hindiGuideBtn" title="हिंदी गाइड">🇮🇳 हिंदी गाइड</button>
+      <button class="btn btn-gold btn-sm" id="unlockNavBtn">Unlock ₹149</button>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="hero-eyebrow">AI Meeting Assistant</div>
+    <h1>Turn messy meeting talk into <em>clean, shareable notes</em> — in one click.</h1>
+    <p class="hero-sub">Paste a transcript, voice-to-text dump, or rough scribbles. Get a structured summary, decisions, and action items with owners &amp; deadlines — ready to send to your client.</p>
+    <div class="hero-stats">
+      <div class="hstat"><b>&lt;20s</b><span>AVG. GENERATION</span></div>
+      <div class="hstat"><b>6</b><span>MEETING TEMPLATES</span></div>
+      <div class="hstat"><b>₹149</b><span>LIFETIME UNLOCK</span></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <!-- LEFT: INPUT -->
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="num">1</span>Freelancing Mode Presets</div>
+        </div>
+        <div class="preset-grid" id="presetGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="num">2</span>Meeting Details</div>
+        </div>
+
+        <label for="meetingTitle">Meeting title</label>
+        <input type="text" id="meetingTitle" placeholder="e.g. Website redesign — kickoff call">
+
+        <div class="row2">
+          <div>
+            <label for="meetingType">Meeting type</label>
+            <select id="meetingType">
+              <option value="Client Call">Client Call</option>
+              <option value="Team Standup">Team Standup</option>
+              <option value="Project Kickoff">Project Kickoff</option>
+              <option value="Sales / Discovery Call">Sales / Discovery Call</option>
+              <option value="Interview">Interview</option>
+              <option value="Internal Review">Internal Review</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div>
+            <label for="outputTone">Output tone</label>
+            <select id="outputTone">
+              <option value="Professional & concise">Professional &amp; concise</option>
+              <option value="Formal client-facing">Formal client-facing</option>
+              <option value="Casual internal">Casual internal</option>
+              <option value="Detailed & thorough">Detailed &amp; thorough</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="attendees">Attendees <span style="color:var(--text-faint);font-weight:400;">(optional, comma separated)</span></label>
+        <input type="text" id="attendees" placeholder="e.g. Mamta, Rohan (Client), Priya">
+
+        <label for="transcript">Paste transcript / rough notes</label>
+        <textarea id="transcript" placeholder="Paste your raw meeting notes, voice-to-text transcript, or bullet scribbles here...
+
+Example:
+client said homepage design ok but wants pricing page redone by friday. rohan will send reference sites tonight. priya to start wireframe monday. next call tuesday 4pm to review."></textarea>
+        <p class="hint" id="charCount">0 characters</p>
+
+        <label>Output language</label>
+        <div class="chip-group" id="langChips">
+          <button class="chip active" data-lang="English">English</button>
+          <button class="chip" data-lang="Hindi">हिंदी</button>
+          <button class="chip" data-lang="Hinglish">Hinglish</button>
+        </div>
+
+        <div class="ad-slot" id="adSlotTop">Ad slot — 320×50 (AdSense placeholder)</div>
+
+        <button class="gen-btn" id="generateBtn">
+          <span class="spinner" id="genSpinner"></span>
+          <span id="genBtnLabel">✨ Generate Meeting Notes</span>
+        </button>
+        <div class="usage-note">
+          <span>Free plan: <b>3 generations/day</b>, English only</span>
+          <span id="deviceIdShort" style="opacity:.6;"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: OUTPUT -->
+    <div>
+      <div class="card output-card">
+        <div class="card-head">
+          <div class="card-title"><span class="num">3</span>Generated Notes</div>
+        </div>
+
+        <div class="output-empty" id="outputEmpty">
+          <div class="ic">📝</div>
+          <p>Your structured meeting notes will appear here — summary, decisions, and action items, ready to copy or download.</p>
+        </div>
+
+        <div class="output-body" id="outputBody">
+          <div class="notes-meta" id="notesMeta"></div>
+          <div id="notesContent"></div>
+          <div class="output-actions">
+            <button class="btn btn-sm" id="copyBtn">📋 Copy</button>
+            <button class="btn btn-sm" id="downloadTxtBtn">⬇ .txt</button>
+            <button class="btn btn-sm" id="downloadPdfBtn">🔒 PDF Export</button>
+            <button class="btn btn-sm" id="emailBtn">✉ Copy as Email</button>
+            <button class="btn btn-sm btn-ghost" id="regenBtn">↻ Regenerate</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="num">↺</span>Recent History</div>
+          <button class="btn btn-sm btn-ghost" id="clearHistoryBtn">Clear</button>
+        </div>
+        <div id="historyList"><p class="history-empty">No meeting notes generated yet.</p></div>
+      </div>
+
+      <div class="ad-slot">Ad slot — 300×250 (AdSense placeholder)</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>Meeting Notes Generator by <a href="#">M.Dev · IncomeAIHub</a> · Made for Indian freelancers, CA firms &amp; MSMEs · <a href="#" id="footerHindiLink">हिंदी गाइड</a></p>
+  </div>
+</footer>
+
+<!-- ================= PAYWALL MODAL ================= -->
+<div class="modal-overlay" id="paywallOverlay">
+  <div class="modal">
+    <button class="modal-close" id="paywallClose">✕</button>
+    <div class="modal-icon">🔓</div>
+    <h2>Unlock Meeting Notes AI — Lifetime</h2>
+    <p class="desc">One-time payment. No subscription. Unlocks on this device forever.</p>
+    <ul class="feature-list">
+      <li><span class="check">✓</span> Unlimited meeting note generations</li>
+      <li><span class="check">✓</span> Hindi &amp; Hinglish output</li>
+      <li><span class="check">✓</span> All 6 Freelancing Mode presets unlocked</li>
+      <li><span class="check">✓</span> PDF export (client-ready format)</li>
+      <li><span class="check">✓</span> Unlimited history saved locally</li>
+      <li><span class="check">✓</span> No ads on generated output</li>
+    </ul>
+    <div class="price-box">
+      <div><span class="old">₹499</span> <span class="amt">₹149 <small>/ lifetime</small></span></div>
+      <span class="tag emerald">70% OFF</span>
+    </div>
+    <button class="gen-btn" id="payNowBtn">Pay ₹149 with Razorpay →</button>
+    <div class="trust-row">
+      <span>🔒 Secure checkout</span>
+      <span>⚡ Instant unlock</span>
+      <span>🇮🇳 UPI / Cards / Netbanking</span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= HINDI GUIDE MODAL ================= -->
+<div class="modal-overlay" id="hindiOverlay">
+  <div class="modal wide">
+    <button class="modal-close" id="hindiClose">✕</button>
+    <div class="modal-icon">🇮🇳</div>
+    <h2>इस्तेमाल कैसे करें — हिंदी गाइड</h2>
+    <div class="guide-body">
+      <div class="guide-step">
+        <div class="n">1</div>
+        <div><b>प्रीसेट चुनें</b><p>ऊपर दिए गए Freelancing Mode प्रीसेट में से अपनी मीटिंग के प्रकार से मिलता-जुलता विकल्प चुनें — जैसे Client Update Call या Discovery Call।</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="n">2</div>
+        <div><b>मीटिंग डिटेल भरें</b><p>मीटिंग का टाइटल, टाइप, टोन और अटेंडीज़ (जो लोग मीटिंग में थे) डालें। यह ऑप्शनल है लेकिन नोट्स ज़्यादा सटीक बनते हैं।</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="n">3</div>
+        <div><b>ट्रांसक्रिप्ट पेस्ट करें</b><p>अपनी रफ नोट्स, वॉइस-टू-टेक्स्ट या बुलेट पॉइंट्स टेक्स्ट बॉक्स में पेस्ट करें — जैसे भी लिखा हो, AI उसे समझ लेगा।</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="n">4</div>
+        <div><b>Generate बटन दबाएं</b><p>"✨ Generate Meeting Notes" पर क्लिक करें। कुछ ही सेकंड में स्ट्रक्चर्ड नोट्स तैयार हो जाएंगे — समरी, डिसीज़न और एक्शन आइटम के साथ।</p></div>
+      </div>
+      <div class="guide-step">
+        <div class="n">5</div>
+        <div><b>कॉपी या डाउनलोड करें</b><p>नोट्स को कॉपी करें, .txt फाइल डाउनलोड करें, या ईमेल फॉर्मेट में क्लाइंट को भेजें। PDF एक्सपोर्ट के लिए ₹149 का लाइफटाइम अनलॉक चाहिए।</p></div>
+      </div>
+      <h3>फ्री vs अनलॉक</h3>
+      <p>फ्री प्लान में रोज़ाना 3 जनरेशन मिलते हैं, सिर्फ अंग्रेज़ी में। ₹149 का वन-टाइम पेमेंट करने पर अनलिमिटेड जनरेशन, हिंदी/हिंग्लिश आउटपुट, सभी प्रीसेट और PDF एक्सपोर्ट अनलॉक हो जाते हैं — यह अनलॉक इसी डिवाइस पर हमेशा के लिए रहता है।</p>
+      <h3>ज़रूरी बात</h3>
+      <p>यह टूल आपके डेटा को सुरक्षित रूप से प्रोसेस करता है। इंटरनेट कनेक्शन ज़रूरी है। किसी भी समस्या के लिए नीचे दिए गए कॉन्टैक्ट पर संपर्क करें।</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="ic">✓</span><span id="toastMsg">Copied to clipboard</span></div>
+
+<script>
+/* =========================================================================
+   MEETING NOTES GENERATOR — IncomeAIHub / M.Dev
+   Single-file tool. Supabase Edge Functions backend + Razorpay paywall.
+   Falls back to local demo-mode generation if backend is unreachable.
+   ========================================================================= */
+
+/* ---------------- CONFIG ---------------- */
+const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co"; // TODO: replace
+const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY";           // TODO: replace
+const RAZORPAY_KEY_ID = "rzp_live_YOUR_KEY_ID";                // TODO: replace
+const UNLOCK_PRICE_PAISE = 14900; // ₹149
+const FREE_DAILY_LIMIT = 3;
+const TOOL_ID = "meeting-notes-generator";
+
+let sb = null;
+try {
+  if (window.supabase && SUPABASE_URL.includes("supabase.co") && !SUPABASE_URL.includes("YOUR-PROJECT-REF")) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) { console.warn("Supabase client init skipped:", e.message); }
+
+const DEMO_MODE = !sb; // true when backend not configured -> local generation fallback
+
+/* ---------------- DEVICE ID / UNLOCK STATE ---------------- */
+function getDeviceId(){
+  let id = localStorage.getItem("mng_device_id");
+  if(!id){
+    id = "dev_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem("mng_device_id", id);
+  }
+  return id;
+}
+const deviceId = getDeviceId();
+document.getElementById("deviceIdShort").textContent = "ID: " + deviceId.slice(0,10) + "…";
+
+function isUnlocked(){ return localStorage.getItem("mng_unlocked_" + TOOL_ID) === "true"; }
+function setUnlocked(){ localStorage.setItem("mng_unlocked_" + TOOL_ID, "true"); }
+
+function todayKey(){ return "mng_uses_" + new Date().toISOString().slice(0,10); }
+function getUsesToday(){ return parseInt(localStorage.getItem(todayKey()) || "0", 10); }
+function incUsesToday(){ localStorage.setItem(todayKey(), String(getUsesToday()+1)); }
+function usesLeftToday(){ return Math.max(0, FREE_DAILY_LIMIT - getUsesToday()); }
+
+function refreshStatusPill(){
+  const pill = document.getElementById("statusPill");
+  const usesLeftEl = document.getElementById("usesLeft");
+  if(isUnlocked()){
+    pill.className = "pill-status unlocked";
+    pill.innerHTML = '<span class="dot"></span>Unlocked · Lifetime';
+    document.getElementById("unlockNavBtn").style.display = "none";
+  } else {
+    pill.className = "pill-status free";
+    pill.innerHTML = '<span class="dot"></span>Free · <span id="usesLeft">' + usesLeftToday() + '</span> left today';
+  }
+}
+refreshStatusPill();
+
+/* ---------------- PRESETS (Freelancing Mode) ---------------- */
+const PRESETS = [
+  { id:"client-update", title:"Client Update Call", desc:"Progress + next steps for client", locked:false,
+    type:"Client Call", tone:"Formal client-facing" },
+  { id:"discovery", title:"Discovery / Sales Call", desc:"Requirements + budget capture", locked:false,
+    type:"Sales / Discovery Call", tone:"Professional & concise" },
+  { id:"kickoff", title:"Project Kickoff", desc:"Scope, timeline, ownership", locked:true,
+    type:"Project Kickoff", tone:"Detailed & thorough" },
+  { id:"standup", title:"Team Standup", desc:"Blockers + daily progress", locked:true,
+    type:"Team Standup", tone:"Casual internal" },
+  { id:"review", title:"Project Review", desc:"What's done, what's pending", locked:true,
+    type:"Internal Review", tone:"Professional & concise" },
+  { id:"invoice", title:"Invoice / Payment Discussion", desc:"Terms + follow-up dates", locked:true,
+    type:"Client Call", tone:"Formal client-facing" },
+];
+
+function renderPresets(){
+  const grid = document.getElementById("presetGrid");
+  grid.innerHTML = "";
+  PRESETS.forEach(p=>{
+    const locked = p.locked && !isUnlocked();
+    const btn = document.createElement("button");
+    btn.className = "preset" + (locked ? " locked" : "");
+    btn.innerHTML = `<b>${p.title}</b><span>${p.desc}</span>`;
+    btn.onclick = () => {
+      if(locked){ openPaywall(); return; }
+      document.getElementById("meetingType").value = p.type;
+      document.getElementById("outputTone").value = p.tone;
+      showToast("Preset applied: " + p.title);
+    };
+    grid.appendChild(btn);
+  });
+}
+renderPresets();
+
+/* ---------------- LANGUAGE CHIPS ---------------- */
+let selectedLang = "English";
+document.getElementById("langChips").addEventListener("click",(e)=>{
+  const chip = e.target.closest(".chip");
+  if(!chip) return;
+  const lang = chip.dataset.lang;
+  if(lang !== "English" && !isUnlocked()){ openPaywall(); return; }
+  document.querySelectorAll("#langChips .chip").forEach(c=>c.classList.remove("active"));
+  chip.classList.add("active");
+  selectedLang = lang;
+});
+function refreshLangChipLocks(){
+  document.querySelectorAll("#langChips .chip").forEach(c=>{
+    if(c.dataset.lang !== "English"){
+      c.classList.toggle("locked", !isUnlocked());
+    }
+  });
+}
+refreshLangChipLocks();
+
+/* ---------------- CHAR COUNT ---------------- */
+const transcriptEl = document.getElementById("transcript");
+transcriptEl.addEventListener("input", ()=>{
+  document.getElementById("charCount").textContent = transcriptEl.value.length + " characters";
+});
+
+/* ---------------- TOAST ---------------- */
+let toastTimer;
+function showToast(msg){
+  const toast = document.getElementById("toast");
+  document.getElementById("toastMsg").textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> toast.classList.remove("show"), 2600);
+}
+
+/* ---------------- MODALS ---------------- */
+function openPaywall(){ document.getElementById("paywallOverlay").classList.add("show"); }
+function closePaywall(){ document.getElementById("paywallOverlay").classList.remove("show"); }
+document.getElementById("unlockNavBtn").onclick = openPaywall;
+document.getElementById("paywallClose").onclick = closePaywall;
+document.getElementById("paywallOverlay").addEventListener("click",(e)=>{ if(e.target.id==="paywallOverlay") closePaywall(); });
+
+function openHindiGuide(){ document.getElementById("hindiOverlay").classList.add("show"); }
+function closeHindiGuide(){ document.getElementById("hindiOverlay").classList.remove("show"); }
+document.getElementById("hindiGuideBtn").onclick = openHindiGuide;
+document.getElementById("footerHindiLink").onclick = (e)=>{ e.preventDefault(); openHindiGuide(); };
+document.getElementById("hindiClose").onclick = closeHindiGuide;
+document.getElementById("hindiOverlay").addEventListener("click",(e)=>{ if(e.target.id==="hindiOverlay") closeHindiGuide(); });
+
+/* ---------------- RAZORPAY PAYMENT FLOW ---------------- */
+async function startPayment(){
+  const payBtn = document.getElementById("payNowBtn");
+  payBtn.disabled = true;
+  payBtn.textContent = "Preparing checkout…";
+
+  try{
+    let orderData;
+    if(sb){
+      const { data, error } = await sb.functions.invoke("create-order", {
+        body: { amount: UNLOCK_PRICE_PAISE, tool_id: TOOL_ID, device_id: deviceId }
+      });
+      if(error) throw error;
+      orderData = data;
+    } else {
+      // Demo mode: simulate order object so UI flow can still be tested
+      orderData = { order_id: "order_demo_" + Date.now(), amount: UNLOCK_PRICE_PAISE, key_id: RAZORPAY_KEY_ID };
+    }
+
+    const options = {
+      key: orderData.key_id || RAZORPAY_KEY_ID,
+      amount: UNLOCK_PRICE_PAISE,
+      currency: "INR",
+      name: "IncomeAIHub",
+      description: "Meeting Notes AI — Lifetime Unlock",
+      order_id: orderData.order_id && !orderData.order_id.startsWith("order_demo_") ? orderData.order_id : undefined,
+      handler: async function(response){
+        await verifyPayment(response, orderData);
+      },
+      modal: { ondismiss: function(){ payBtn.disabled = false; payBtn.textContent = "Pay ₹149 with Razorpay →"; } },
+      theme: { color: "#d4af6a" },
+      prefill: {}
+    };
+
+    if(DEMO_MODE){
+      // No live backend configured — unlock directly in demo mode so the tool remains testable end-to-end.
+      showToast("Demo mode: simulating successful payment…");
+      setTimeout(()=>{ setUnlocked(); refreshStatusPill(); refreshLangChipLocks(); renderPresets(); closePaywall(); showToast("🎉 Unlocked! Enjoy Meeting Notes AI"); payBtn.disabled=false; payBtn.textContent="Pay ₹149 with Razorpay →"; }, 900);
+      return;
+    }
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(){
+      showToast("Payment failed. Please try again.");
+      payBtn.disabled = false; payBtn.textContent = "Pay ₹149 with Razorpay →";
+    });
+    rzp.open();
+  } catch(err){
+    console.error(err);
+    showToast("Could not start checkout. Try again.");
+    payBtn.disabled = false; payBtn.textContent = "Pay ₹149 with Razorpay →";
+  }
+}
+
+async function verifyPayment(response, orderData){
+  try{
+    if(sb){
+      const { data, error } = await sb.functions.invoke("verify-payment", {
+        body: {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          tool_id: TOOL_ID,
+          device_id: deviceId
+        }
+      });
+      if(error || !data?.verified) throw error || new Error("Verification failed");
+    }
+    setUnlocked();
+    refreshStatusPill();
+    refreshLangChipLocks();
+    renderPresets();
+    closePaywall();
+    showToast("🎉 Unlocked! Enjoy unlimited Meeting Notes AI");
+  } catch(err){
+    console.error(err);
+    showToast("Payment received but verification failed. Contact support.");
+  }
+}
+document.getElementById("payNowBtn").onclick = startPayment;
+
+/* Optional: check-unlock on load, in case user unlocked on another session but same device id was synced server-side */
+async function checkUnlockStatus(){
+  if(!sb || isUnlocked()) return;
+  try{
+    const { data } = await sb.functions.invoke("check-unlock", { body: { tool_id: TOOL_ID, device_id: deviceId } });
+    if(data?.unlocked){ setUnlocked(); refreshStatusPill(); refreshLangChipLocks(); renderPresets(); }
+  } catch(e){ /* silent */ }
+}
+checkUnlockStatus();
+
+/* ---------------- HISTORY ---------------- */
+function getHistory(){ return JSON.parse(localStorage.getItem("mng_history") || "[]"); }
+function saveToHistory(entry){
+  let hist = getHistory();
+  hist.unshift(entry);
+  const cap = isUnlocked() ? 50 : 5;
+  hist = hist.slice(0, cap);
+  localStorage.setItem("mng_history", JSON.stringify(hist));
+  renderHistory();
+}
+function renderHistory(){
+  const hist = getHistory();
+  const el = document.getElementById("historyList");
+  if(hist.length === 0){ el.innerHTML = '<p class="history-empty">No meeting notes generated yet.</p>'; return; }
+  el.innerHTML = "";
+  hist.forEach((h, idx)=>{
+    const div = document.createElement("div");
+    div.className = "history-item";
+    const date = new Date(h.ts);
+    div.innerHTML = `<b>${escapeHtml(h.title || "Untitled meeting")}</b><span>${h.type} · ${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`;
+    div.onclick = () => renderOutput(h.notes, h.title, h.type, h.lang);
+    el.appendChild(div);
+  });
+}
+document.getElementById("clearHistoryBtn").onclick = ()=>{
+  localStorage.removeItem("mng_history");
+  renderHistory();
+  showToast("History cleared");
+};
+renderHistory();
+
+/* ---------------- GENERATION ---------------- */
+const generateBtn = document.getElementById("generateBtn");
+const genSpinner = document.getElementById("genSpinner");
+const genBtnLabel = document.getElementById("genBtnLabel");
+
+let lastGeneration = null;
+
+generateBtn.addEventListener("click", handleGenerate);
+document.getElementById("regenBtn").addEventListener("click", handleGenerate);
+
+async function handleGenerate(){
+  const transcript = transcriptEl.value.trim();
+  if(transcript.length < 20){
+    showToast("Paste a bit more meeting content first");
+    transcriptEl.focus();
+    return;
+  }
+
+  if(!isUnlocked() && usesLeftToday() <= 0){
+    openPaywall();
+    return;
+  }
+
+  if(!isUnlocked() && selectedLang !== "English"){
+    openPaywall();
+    return;
+  }
+
+  const title = document.getElementById("meetingTitle").value.trim() || "Untitled Meeting";
+  const type = document.getElementById("meetingType").value;
+  const tone = document.getElementById("outputTone").value;
+  const attendees = document.getElementById("attendees").value.trim();
+
+  setLoading(true);
+
+  try{
+    let notes;
+    if(sb && !DEMO_MODE){
+      notes = await generateViaBackend({ transcript, title, type, tone, attendees, lang: selectedLang });
+    } else {
+      notes = await generateDemoNotes({ transcript, title, type, tone, attendees, lang: selectedLang });
+    }
+
+    lastGeneration = { notes, title, type, tone, lang: selectedLang, ts: Date.now() };
+    renderOutput(notes, title, type, selectedLang);
+    saveToHistory(lastGeneration);
+
+    if(!isUnlocked()){
+      incUsesToday();
+      refreshStatusPill();
+    }
+    showToast("Notes generated ✓");
+  } catch(err){
+    console.error(err);
+    showToast("Generation failed — showing offline draft instead");
+    try{
+      const notes = await generateDemoNotes({ transcript, title, type, tone, attendees, lang: selectedLang });
+      renderOutput(notes, title, type, selectedLang);
+    } catch(e2){ showToast("Something went wrong. Please try again."); }
+  } finally {
+    setLoading(false);
+  }
+}
+
+function setLoading(on){
+  generateBtn.disabled = on;
+  genSpinner.classList.toggle("show", on);
+  genBtnLabel.textContent = on ? "Generating…" : "✨ Generate Meeting Notes";
+}
+
+/* Backend call — expects a Supabase Edge Function "ai-proxy" that forwards to Claude API */
+async function generateViaBackend({ transcript, title, type, tone, attendees, lang }){
+  const systemPrompt = buildSystemPrompt({ type, tone, attendees, lang });
+  const { data, error } = await sb.functions.invoke("ai-proxy", {
+    body: {
+      tool_id: TOOL_ID,
+      device_id: deviceId,
+      system: systemPrompt,
+      user_content: `Meeting title: ${title}\n\nRaw notes / transcript:\n${transcript}`,
+      response_format: "json"
+    }
+  });
+  if(error) throw error;
+  return parseAiJson(data.text || data.content || data);
+}
+
+function buildSystemPrompt({ type, tone, attendees, lang }){
+  return `You are a meeting notes assistant. Convert raw meeting transcripts/notes into structured minutes.
+Meeting type: ${type}. Tone: ${tone}. Attendees: ${attendees || "not specified"}. Output language: ${lang}.
+Return ONLY valid JSON with this exact shape, no markdown fences, no preamble:
+{
+  "summary": "2-3 sentence overview",
+  "discussion_points": ["point 1", "point 2"],
+  "decisions": ["decision 1"],
+  "action_items": [{"task":"...", "owner":"...", "due":"..."}],
+  "next_steps": "short paragraph or next meeting info"
+}`;
+}
+
+function parseAiJson(raw){
+  let text = typeof raw === "string" ? raw : JSON.stringify(raw);
+  text = text.replace(/```json|```/g,"").trim();
+  return JSON.parse(text);
+}
+
+/* Local/demo generation — lightweight heuristic extraction so the tool works fully offline without any backend */
+async function generateDemoNotes({ transcript, title, type, tone, attendees, lang }){
+  await new Promise(r => setTimeout(r, 650 + Math.random()*500)); // simulate latency
+
+  const sentences = transcript
+    .replace(/\n+/g, ". ")
+    .split(/(?<=[.!?])\s+|\n/)
+    .map(s => s.trim())
+    .filter(s => s.length > 3);
+
+  const actionVerbs = /\b(will|to|need to|should|must|by|deadline|due|send|share|prepare|complete|finish|review|follow up|schedule|call|email)\b/i;
+  const decisionWords = /\b(agreed|decided|finalized|approved|confirmed|ok(ay)?|will go with|chosen)\b/i;
+
+  const discussion = [];
+  const decisions = [];
+  const actions = [];
+
+  sentences.forEach(s=>{
+    const clean = s.replace(/^[-•]\s*/, "").trim();
+    if(clean.length < 4) return;
+    if(decisionWords.test(clean)){
+      decisions.push(capitalize(clean));
+    } else if(actionVerbs.test(clean)){
+      const ownerMatch = clean.match(/^([A-Z][a-zA-Z]+)\s+(will|to|should)/);
+      const dueMatch = clean.match(/\b(by|on)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|today|next week|[a-z]+day|\d{1,2}(st|nd|rd|th)?\s*[a-zA-Z]*)\b/i);
+      actions.push({
+        task: capitalize(clean.replace(/^([A-Z][a-zA-Z]+)\s+(will|to)\s*/,"")),
+        owner: ownerMatch ? ownerMatch[1] : (attendees ? attendees.split(",")[0].trim() : "Unassigned"),
+        due: dueMatch ? capitalize(dueMatch[0]) : "Not specified"
+      });
+    } else {
+      discussion.push(capitalize(clean));
+    }
+  });
+
+  const summaryBase = discussion.slice(0,2).join(" ") || sentences.slice(0,2).join(" ");
+  const summary = summaryBase
+    ? `${title} covered ${discussion.length + decisions.length} key points. ${summaryBase}`.slice(0,320)
+    : `Summary of ${title}.`;
+
+  const isHindi = lang === "Hindi";
+  const isHinglish = lang === "Hinglish";
+
+  return {
+    summary: isHindi ? translateLite(summary,"hi") : isHinglish ? translateLite(summary,"hinglish") : summary,
+    discussion_points: (discussion.length ? discussion : ["No specific discussion points detected — try pasting more detail."]).slice(0,8),
+    decisions: decisions.length ? decisions.slice(0,6) : ["No explicit decisions detected in the notes."],
+    action_items: actions.length ? actions.slice(0,8) : [{ task:"Review meeting notes and confirm next steps", owner: attendees ? attendees.split(",")[0].trim() : "Team", due:"Not specified" }],
+    next_steps: "Follow up on the action items above and confirm the next meeting date with all attendees."
+  };
+}
+
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// Very lightweight label translation for demo mode only — production should route through the AI backend for real Hindi/Hinglish generation.
+function translateLite(text, mode){
+  if(mode === "hi") return "[हिंदी आउटपुट के लिए कृपया अनलॉक करें — यह डेमो अंग्रेज़ी सारांश है] " + text;
+  if(mode === "hinglish") return "[Hinglish output ke liye unlock karein — yeh demo English summary hai] " + text;
+  return text;
+}
+
+/* ---------------- RENDER OUTPUT ---------------- */
+function renderOutput(notes, title, type, lang){
+  document.getElementById("outputEmpty").style.display = "none";
+  const body = document.getElementById("outputBody");
+  body.classList.add("show");
+
+  document.getElementById("notesMeta").innerHTML = `
+    <span class="tag">${escapeHtml(title)}</span>
+    <span class="tag violet">${escapeHtml(type)}</span>
+    <span class="tag emerald">${escapeHtml(lang)}</span>
+    <span class="tag">${new Date().toLocaleDateString()}</span>
+  `;
+
+  const c = document.getElementById("notesContent");
+  c.innerHTML = `
+    <div class="notes-section">
+      <h3>📋 Summary</h3>
+      <p>${escapeHtml(notes.summary)}</p>
+    </div>
+    <div class="notes-section">
+      <h3>💬 Discussion Points</h3>
+      <ul>${notes.discussion_points.map(d=>`<li>${escapeHtml(d)}</li>`).join("")}</ul>
+    </div>
+    <div class="notes-section">
+      <h3>✅ Decisions Made</h3>
+      <ul>${notes.decisions.map(d=>`<li>${escapeHtml(d)}</li>`).join("")}</ul>
+    </div>
+    <div class="notes-section">
+      <h3>🎯 Action Items</h3>
+      ${notes.action_items.map(a=>`
+        <div class="action-item">
+          <div class="t">${escapeHtml(a.task)}</div>
+          <div class="meta">
+            <span class="owner">${escapeHtml(a.owner)}</span>
+            <span class="due">${escapeHtml(a.due)}</span>
+          </div>
+        </div>`).join("")}
+    </div>
+    <div class="notes-section">
+      <h3>➡ Next Steps</h3>
+      <p>${escapeHtml(notes.next_steps)}</p>
+    </div>
+  `;
+}
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str ?? "";
+  return d.innerHTML;
+}
+
+function notesToPlainText(){
+  if(!lastGeneration) return "";
+  const { notes, title, type, lang } = lastGeneration;
+  let out = `MEETING NOTES — ${title}\n${type} · ${lang} · ${new Date().toLocaleDateString()}\n\n`;
+  out += `SUMMARY\n${notes.summary}\n\n`;
+  out += `DISCUSSION POINTS\n${notes.discussion_points.map(d=>"- "+d).join("\n")}\n\n`;
+  out += `DECISIONS\n${notes.decisions.map(d=>"- "+d).join("\n")}\n\n`;
+  out += `ACTION ITEMS\n${notes.action_items.map(a=>`- ${a.task} (Owner: ${a.owner}, Due: ${a.due})`).join("\n")}\n\n`;
+  out += `NEXT STEPS\n${notes.next_steps}\n\n`;
+  out += `Generated with Meeting Notes AI — IncomeAIHub`;
+  return out;
+}
+
+/* ---------------- OUTPUT ACTIONS ---------------- */
+document.getElementById("copyBtn").onclick = async ()=>{
+  if(!lastGeneration) return;
+  await navigator.clipboard.writeText(notesToPlainText());
+  showToast("Copied to clipboard ✓");
+};
+
+document.getElementById("downloadTxtBtn").onclick = ()=>{
+  if(!lastGeneration) return;
+  const blob = new Blob([notesToPlainText()], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = (lastGeneration.title || "meeting-notes").replace(/[^a-z0-9]+/gi,"-").toLowerCase() + ".txt";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded .txt ✓");
+};
+
+document.getElementById("downloadPdfBtn").onclick = ()=>{
+  if(!lastGeneration) return;
+  if(!isUnlocked()){ openPaywall(); return; }
+  // Client-ready PDF export via print dialog (no external PDF library needed)
+  const w = window.open("", "_blank");
+  const notes = lastGeneration.notes;
+  w.document.write(`
+    <html><head><title>${escapeHtml(lastGeneration.title)}</title>
+    <style>
+      body{font-family:Georgia,serif;padding:40px;max-width:700px;margin:0 auto;color:#1a1a1a;}
+      h1{font-size:22px;border-bottom:2px solid #d4af6a;padding-bottom:10px;}
+      h2{font-size:15px;margin-top:22px;color:#8a6d2f;}
+      li{margin-bottom:6px;}
+      .meta{color:#666;font-size:12px;margin-bottom:20px;}
+      .action{border:1px solid #ddd;border-radius:6px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;font-size:13px;}
+    </style></head><body>
+    <h1>${escapeHtml(lastGeneration.title)}</h1>
+    <div class="meta">${escapeHtml(lastGeneration.type)} · ${escapeHtml(lastGeneration.lang)} · ${new Date().toLocaleDateString()}</div>
+    <h2>Summary</h2><p>${escapeHtml(notes.summary)}</p>
+    <h2>Discussion Points</h2><ul>${notes.discussion_points.map(d=>`<li>${escapeHtml(d)}</li>`).join("")}</ul>
+    <h2>Decisions</h2><ul>${notes.decisions.map(d=>`<li>${escapeHtml(d)}</li>`).join("")}</ul>
+    <h2>Action Items</h2>${notes.action_items.map(a=>`<div class="action"><span>${escapeHtml(a.task)}</span><span>${escapeHtml(a.owner)} · ${escapeHtml(a.due)}</span></div>`).join("")}
+    <h2>Next Steps</h2><p>${escapeHtml(notes.next_steps)}</p>
+    </body></html>
+  `);
+  w.document.close();
+  setTimeout(()=> w.print(), 400);
+};
+
+document.getElementById("emailBtn").onclick = async ()=>{
+  if(!lastGeneration) return;
+  const { notes, title } = lastGeneration;
+  const emailText = `Subject: Meeting Notes — ${title}\n\nHi all,\n\nSharing a quick summary from our meeting:\n\n${notes.summary}\n\nKey decisions:\n${notes.decisions.map(d=>"- "+d).join("\n")}\n\nAction items:\n${notes.action_items.map(a=>`- ${a.task} — ${a.owner} (${a.due})`).join("\n")}\n\nNext steps: ${notes.next_steps}\n\nBest,\n`;
+  await navigator.clipboard.writeText(emailText);
+  showToast("Email-ready text copied ✓");
+};
+
+/* ---------------- DEMO MODE BANNER ---------------- */
+if(DEMO_MODE){
+  const banner = document.createElement("div");
+  banner.className = "demo-banner";
+  banner.innerHTML = "⚡ Running in demo mode (Supabase backend not connected) — notes are generated locally with a lightweight offline engine.";
+  document.querySelector(".hero .wrap") ? null : document.querySelector(".layout").parentElement.insertBefore(banner, document.querySelector(".layout"));
+}
+</script>
+</body>
+</html>
